@@ -1,26 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Use correct character set. -->
-  <meta charset="utf-8">
-  <!-- Tell IE to use the latest, best version. -->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-  <title>Hello!</title>
-  <script src="../../Build/Cesium/Cesium.js"></script>
-  <style>
-      @import url("../../Apps/Sandcastle/templates/bucket.css");
-      html, body, #cesiumContainer {
-          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-      }
-  </style>
+    <!-- Use correct character set. -->
+    <meta charset="utf-8">
+    <!-- Tell IE to use the latest, best version. -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Taller 04</title>
+    <script type="text/javascript" src="../../Build/CesiumUnminified/Cesium.js"></script>
+    <script type="text/javascript" src="../../Apps/Sandcastle/Sandcastle-header.js"></script>
+    
+    <style>
+      
+        @import url("../../Apps/Sandcastle/templates/bucket.css");
+        @import url("../../Build/Cesium/Widgets/widgets.css");
+
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+        }
+        .toolbar {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+    </style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
+    <div id="cesiumContainer"></div>
+    <div id="toolbar"></div>
+ 
   <script>
-    var viewer = new Cesium.Viewer('cesiumContainer');
+      
+    //   El visor tiene varias opciones para ser modificadas, las siguientes variables
+    // definen la presencia de algunos botones de navegación y otros en todo el visor                   
+    var visor = new Cesium.Viewer('cesiumContainer',{
+        // scene3DOnly.       Esta variable activa/descativa la visualización en plano o en el globo.
+        scene3DOnly: false,
+        // baseLayerPicker.   Esta variable permite cambiar el mapa base entre los elementos disponibles
+        baseLayerPicker: true,
+        //timeline.           Esta variable muestra/esconde la línea de tiempo del visor principal.
+        timeline: false,
+        // animation.         Esta variable apaga el botón de la parte inferior izquierda del visor
+        animation: false,
+        //fullscreenButton.   Esta variable muestra/esconde botón de pantalla completa.
+        fullscreenButton: false                                                    
+    });    
+    // Esta opción permite cargar un archivo GeoJson a la interfaz gráfica del Cesium.
+    //*visor.dataSources.add(Cesium.GeoJsonDataSource.load('js/depto.geojson', {
+        //
+    //    stroke: Cesium.Color.BLUE,
+        //
+    //    strokeWidth: 1,
+        //
+    //    fill: Cesium.Color(0.5,0.5,0.5,0.25),        
+    //    markerSymbol: '?'
+        //
+        //describe:'<h1>Hola</h1>'
+     //   })
+    //);
 
+    Cesium.Math.setRandomNumberSeed(0);
+
+    var promise = Cesium.GeoJsonDataSource.load('js/depto.geojson');
+    promise.then(function(dataSource) {
+        visor.dataSources.add(dataSource);
+
+        //Obtener un vector de las entidades
+        var entities = dataSource.entities.values;
+
+        var colorHash = {};
+        for (var i = 0; i < entities.length; i++) {
+            //Para cada entiedad, se crea un color aleatorio tomando como base el nombre
+            //del departamento create a random color based on the state name.
+            //Some states have multiple entities, so we store the color in a
+            //hash so that we use the same color for the entire state.
+            var entity = entities[i];
+            var name = entity.name;
+            var color = colorHash[name];
+            if (!color) {
+                color = Cesium.Color.fromRandom({
+                    alpha : 0.5
+                });
+                colorHash[name] = color;
+            }
+
+            //Set the polygon material to our random color.
+            entity.polygon.material = color;
+            //Remove the outlines.
+            entity.polygon.outline = true;
+
+            //Se presenta extrusión utilizando como base la población del Departamento.
+            // Cada entidad tiene almacenado esta característica en un archivo 
+            // GeoJSON.
+            entity.polygon.extrudedHeight = entity.properties.Cens05/2.0;
+        }
+    }).otherwise(function(error){
+        //Mostrar cualquier error que se presente durante la carga.
+        window.alert(error);
+    });   
   </script>
 </body>
 </html>
